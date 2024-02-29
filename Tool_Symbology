@@ -1,40 +1,31 @@
-import arcpy
+def execute(self, parameters, messages):
+    layer_name = parameters[0].valueAsText
 
-class ChangeSymbologyTool(object):
-    def __init__(self):
-        self.label = "Change Symbology"
-        self.description = "Change the symbology of a layer."
-        self.canRunInBackground = False
+    # Get the current project
+    p = arcpy.mp.ArcGISProject("CURRENT")
 
-    def getParameterInfo(self):
-        layer_name = arcpy.Parameter(
-            displayName="Layer Name",
-            name="layer_name",
-            datatype="GPString",
-            parameterType="Required",
-            direction="Input"
-        )
-        return [layer_name]
+    # Specify the layer in the map
+    m = p.listMaps()[0]  # Assuming there's only one map in the project
+    lyr = m.listLayers(layer_name)[0]
 
-    def execute(self, parameters, messages):
-        layer_name = parameters[0].valueAsText
+    # Access symbology and change it
+    sym = lyr.symbology
+    sym.updateRenderer('GraduatedColorsRenderer')
+    sym.renderer.classificationField = 'value'
+    sym.classificationMethod = 'NaturalBreaks'
+    sym.renderer.breakCount = 10
 
-        # Get the current project
-        p = arcpy.mp.ArcGISProject("CURRENT")
+    # Save symbology back onto layer
+    lyr.symbology = sym
 
-        # Specify the layer in the map
-        m = p.listMaps()[0]  # Assuming there's only one map in the project
-        lyr = m.listLayers(layer_name)[0]
+    # Save project
+    p.save()
 
-        # Access symbology and change it
-        sym = lyr.symbology
-        sym.updateRenderer('GraduatedColorsRenderer')
-        sym.renderer.classificationField = 'value'
-        sym.classificationMethod = 'NaturalBreaks'
-        sym.renderer.breakCount = 10
+    # Create a copy of the layer with modified symbology
+    modified_lyr = lyr.connectionProperties
+    modified_lyr.name = lyr.name + "_modified"  # Append "_modified" to the layer name
 
-        # Save symbology back onto layer
-        lyr.symbology = sym
+    # Add the modified layer back to the map
+    m.addLayer(modified_lyr)
 
-        # Save project
-        p.save()
+    return
