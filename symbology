@@ -1,19 +1,13 @@
 import arcpy
 
-# Path to your project file (.aprx)
-project_path = "path_to_your_project_file.aprx"
+# Set the workspace
+arcpy.env.workspace = "path_to_your_workspace"
 
 # Layer name that you want to change the symbology for
 layer_name = "Name_of_your_layer"
 
-# Open the project
-aprx = arcpy.mp.ArcGISProject(project_path)
-
-# Get the map
-map = aprx.listMaps()[0]  # Assuming there's only one map in the project
-
 # Find the layer by name
-layer = map.listLayers(layer_name)[0]
+layer = arcpy.mp.LayerFile(layer_name)
 
 # Define manual class breaks
 class_breaks = [0, 50, 75, 100]
@@ -34,10 +28,4 @@ for i, color in enumerate(colors):
     sym.renderer.setBreak(i, class_breaks[i], class_breaks[i+1], sym.renderer.symbol)
 
 # Apply the symbology
-layer.symbology = sym
-
-# Save the changes to the project
-aprx.save()
-
-# Clean up
-del aprx
+layer.saveACopy("path_to_output_layer")
