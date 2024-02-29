@@ -1,31 +1,23 @@
 import arcpy
 
-# Set the workspace
-arcpy.env.workspace = "path_to_your_workspace"
+# define project
+p = arcpy.mp.ArcGISProject("CURRENT")
 
-# Layer name that you want to change the symbology for
-layer_name = "Name_of_your_layer"
+# specify map in project named "Map"
+m = p.listMaps('Map')[0]
 
-# Find the layer by name
-layer = arcpy.mp.LayerFile(layer_name)
+# specify layer in map named "polygons"
+lyr = m.listLayers('polygons')[0]
 
-# Define manual class breaks
-class_breaks = [0, 50, 75, 100]
+# access symbology of layer and change symbology to graduated colors
+sym = lyr.symbology
+sym.updateRenderer('GraduatedColorsRenderer')
+sym.renderer.classificationField = 'value'
+sym.classificationMethod = 'NaturalBreaks'
+sym.renderer.breakCount = 10
 
-# Define colors for each class
-colors = ["#FF0000", "#FFFF00", "#00FF00"]
+# save symbology back onto layer
+lyr.symbology = sym
 
-# Set the symbology
-sym = layer.symbology
-sym.renderer.classificationField = "Your_Attribute_Field"  # Specify your attribute field name
-sym.renderer.breakCount = len(class_breaks) - 1
-sym.renderer.classBreakValues = class_breaks
-
-# Assign colors to each class
-for i, color in enumerate(colors):
-    sym.renderer.symbol.color = arcpy.Color(color)
-    sym.renderer.symbol.colorTransparency = 0  # Set transparency to 0%
-    sym.renderer.setBreak(i, class_breaks[i], class_breaks[i+1], sym.renderer.symbol)
-
-# Apply the symbology
-layer.saveACopy("path_to_output_layer")
+# save project
+p.save()
