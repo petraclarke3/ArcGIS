@@ -1,0 +1,43 @@
+import arcpy
+
+# Path to your project file (.aprx)
+project_path = "path_to_your_project_file.aprx"
+
+# Layer name that you want to change the symbology for
+layer_name = "Name_of_your_layer"
+
+# Open the project
+aprx = arcpy.mp.ArcGISProject(project_path)
+
+# Get the map
+map = aprx.listMaps()[0]  # Assuming there's only one map in the project
+
+# Find the layer by name
+layer = map.listLayers(layer_name)[0]
+
+# Define manual class breaks
+class_breaks = [0, 50, 75, 100]
+
+# Define colors for each class
+colors = ["#FF0000", "#FFFF00", "#00FF00"]
+
+# Set the symbology
+sym = layer.symbology
+sym.renderer.classificationField = "Your_Attribute_Field"  # Specify your attribute field name
+sym.renderer.breakCount = len(class_breaks) - 1
+sym.renderer.classBreakValues = class_breaks
+
+# Assign colors to each class
+for i, color in enumerate(colors):
+    sym.renderer.symbol.color = arcpy.Color(color)
+    sym.renderer.symbol.colorTransparency = 0  # Set transparency to 0%
+    sym.renderer.setBreak(i, class_breaks[i], class_breaks[i+1], sym.renderer.symbol)
+
+# Apply the symbology
+layer.symbology = sym
+
+# Save the changes to the project
+aprx.save()
+
+# Clean up
+del aprx
