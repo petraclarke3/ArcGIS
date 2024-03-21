@@ -1,0 +1,66 @@
+import arcpy
+
+class Toolbox(object):
+    def __init__(self):
+        self.label = "Class Breaks Symbology Toolbox"
+        self.alias = ""
+
+        # List of tool classes associated with this toolbox
+        self.tools = [ApplyClassBreaksSymbology]
+
+class ApplyClassBreaksSymbology(object):
+    def __init__(self):
+        self.label = "Apply Class Breaks Symbology"
+        self.description = "Applies class breaks symbology to a specified layer based on a given field."
+
+    def getParameterInfo(self):
+        # Layer to apply symbology to
+        param0 = arcpy.Parameter(
+            displayName="Target Layer",
+            name="target_layer",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+        # Field to classify
+        param1 = arcpy.Parameter(
+            displayName="Field to Classify",
+            name="field_to_classify",
+            datatype="Field",
+            parameterType="Required",
+            direction="Input")
+        param1.parameterDependencies = [param0.name]
+        param1.filter.list = ['Short', 'Long', 'Float', 'Double']  # Numeric fields only
+
+        return [param0, param1]
+
+    def execute(self, parameters, messages):
+        target_layer = parameters[0].valueAsText
+        field_to_classify = parameters[1].valueAsText
+
+        # Define manual class breaks and their corresponding colors
+        class_breaks = [0, 50, 75, 100]
+        colors = ["#FF0000", "#FFFF00", "#00FF00"]
+
+        # Access the layer's symbology
+        mxd = arcpy.mapping.MapDocument("CURRENT")
+        lyr = arcpy.mapping.ListLayers(mxd, target_layer)[0]
+        if lyr.symbologyType == "GRADUATED_COLORS":
+            sym = lyr.symbology
+            
+            # Set the field and breaks
+            sym.valueField = field_to_classify
+            sym.classBreakValues = class_breaks
+            
+            # Loop through each class to assign colors
+            for i, color in enumerate(colors):
+                sym.classBreakLabels[i] = f"{class_breaks[i]} - {class_breaks[i+1]}"
+                sym.renderer.classBreaks[i].symbol.color = color
+                sym.renderer.classBreaks[i].symbol.outlineColor = color
+            
+            # Apply the changes
+            lyr.symbology = sym
+            arcpy.RefreshActiveView()
+        else:
+            arcpy.AddError("Layer does not support graduated colors symbology.")
+
